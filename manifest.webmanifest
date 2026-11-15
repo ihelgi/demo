@@ -1,7 +1,7 @@
 {
-  "name": "Aura Demo",
-  "short_name": "Aura",
-  "description": "Demo statica della dashboard Aura",
+  "name": "Demo",
+  "short_name": "Demo",
+  "description": "Dashboard statica con temperatura, umidità e METAR/TAF",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
