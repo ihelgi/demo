@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Aura Demo">
+<link rel="icon" href="./favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<link rel="manifest" href="./manifest.webmanifest">
+<script>if (window.navigator.standalone) document.documentElement.classList.add("standalone");</script>
+<title>Aura · demo</title>
+<style>
+  *{box-sizing:border-box}
+  html{background:#0a0a0c;color-scheme:dark}
+  html,body{margin:0;height:100%}
+  body{
+    background:#0a0a0c; color:#f5f5f7;
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+    padding:calc(env(safe-area-inset-top) + 18px) 18px calc(env(safe-area-inset-bottom) + 12px);
+    height:100dvh; min-height:100dvh;
+    display:flex; flex-direction:column;
+    overflow:hidden; overscroll-behavior:none;
+    -webkit-font-smoothing:antialiased;
+    -webkit-tap-highlight-color:transparent;
+  }
+  body::before{
+    content:none;position:fixed;top:0;left:0;right:0;
+    height:0;background:#0a0a0c;z-index:60;pointer-events:none;
+  }
+  button{font:inherit;color:inherit}
+
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:6px}
+  .kicker{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#8e8e93;font-weight:500}
+  .ranges{display:flex;gap:13px}
+  .ranges button{
+    appearance:none;border:0;background:transparent;padding:2px 0;
+    font-size:11.5px;color:#5e5e63;letter-spacing:0;cursor:pointer;
+  }
+  .ranges button.on{color:#f5f5f7}
+
+  #rows{flex:none}
+  .srow{
+    display:flex;align-items:flex-end;justify-content:space-between;gap:12px;
+    padding:15px 0 14px;border-top:1px solid #1d1d20;
+  }
+  .left{display:flex;flex-direction:column;gap:8px;min-width:0}
+  .name{
+    display:flex;align-items:center;gap:8px;appearance:none;border:0;background:transparent;
+    padding:0;text-align:left;color:inherit;cursor:pointer;
+    font-size:14px;font-weight:500;
+  }
+  .name.off{opacity:.4}
+  .name.off .dot{opacity:.45}
+  .dot{width:8px;height:8px;border-radius:50%;flex:none}
+  .minmax{display:flex;align-items:baseline;gap:8px;font-size:10px;color:#5e5e63;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .minmax span{display:inline}
+  .minmax b{font-weight:500;color:#6e6e73}
+  .minmax em{font-style:normal;font-weight:600;color:#b9b9bf}
+  .right{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:7px;flex:none}
+  .t{
+    display:flex;align-items:flex-start;justify-content:flex-end;gap:1px;
+    font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    font-size:42px;font-weight:500;line-height:.9;
+    font-variant-numeric:tabular-nums;
+  }
+  .t small{font-size:14px;font-weight:400;color:#8e8e93;letter-spacing:0;line-height:1;margin-top:2px}
+  .t .comma{display:inline-block;width:.38em;text-align:center;margin:0 -.07em}
+  .t .na{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+    font-size:14px;font-weight:400;color:#6e6e73;letter-spacing:0;
+  }
+  .meta{display:flex;align-items:center;gap:9px;font-size:11.5px;color:#a1a1a6}
+  .delta{font-size:11.5px;color:#8e8e93;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+  .charts{margin-top:auto;padding-top:10px;display:flex;flex-direction:column;flex:1;min-height:0}
+  .ctabs{display:flex;gap:14px;margin-bottom:2px;flex:none;overflow-x:auto;scrollbar-width:none}
+  .ctabs::-webkit-scrollbar{display:none}
+  .ctabs button{
+    appearance:none;border:0;background:transparent;padding:4px 0;color:#5e5e63;
+    font-size:11.5px;letter-spacing:0;cursor:pointer;border-bottom:1px solid transparent;flex:none;
+  }
+  .ctabs button.on{color:#f5f5f7;border-bottom-color:#f5f5f7}
+  .legend{
+    display:flex;align-items:center;gap:12px;margin:1px 0 5px;min-width:0;flex:none;
+    overflow-x:auto;scrollbar-width:none;white-space:nowrap;
+  }
+  .legend::-webkit-scrollbar{display:none}
+  .legend[hidden]{display:none}
+  .litem{display:flex;align-items:center;gap:4px;font-size:10px;color:#8e8e93;flex:none}
+  .litem i{width:10px;height:2px;border-radius:1px;display:block}
+  .canvas{position:relative;flex:1;min-height:170px}
+  .canvas[hidden]{display:none}
+  .canvas canvas{position:absolute;inset:0;width:100%;height:100%}
+  .metar{
+    flex:1;min-height:170px;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    padding:6px 2px 4px;
+    font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    font-size:11.5px;line-height:1.6;color:#c3cbd6;
+    scrollbar-width:thin;
+  }
+  .metar[hidden]{display:none}
+  .mtitle{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+    font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+    color:#8e8e93;font-weight:600;margin:12px 0 3px;
+  }
+  .mtitle:first-child{margin-top:0}
+  .mtext{
+    margin:0;white-space:pre-wrap;word-break:break-word;
+    font:inherit;color:inherit;cursor:pointer;
+  }
+  .mtext.decoded{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+    letter-spacing:0;
+  }
+  .tline{display:block}
+  .tline.ind{padding-left:1.2em}
+  .mtext:focus-visible{outline:1px solid #5e5e63;outline-offset:2px}
+  .empty{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:6px;text-align:center;padding:0 24px;
+    font-size:11.5px;line-height:1.45;color:#6e6e73;
+  }
+  .empty strong{font-size:14px;font-weight:500;color:#a1a1a6}
+  .empty[hidden]{display:none}
+
+  footer{
+    display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;
+    font-size:10px;color:#48484d;padding-top:8px;flex:none;
+    font-variant-numeric:tabular-nums;
+  }
+  .fvolts{display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden;white-space:nowrap}
+  .fvolt{display:flex;align-items:center;gap:4px}
+  .fdot{width:5px;height:5px;border-radius:50%;flex:none;opacity:.75}
+  .fvolt .low{color:#c9a227}
+  .fvolt .crit{color:#c4554d}
+  .fplace{text-align:center;color:#5e5e63;white-space:nowrap}
+  .fupdated{grid-column:3;justify-self:end;text-align:right;white-space:nowrap}
+
+  @media (display-mode: standalone){
+    body{height:100svh;min-height:100svh;padding-top:calc(max(env(safe-area-inset-top), 59px) + 24px)}
+    body::before{content:"";height:calc(max(env(safe-area-inset-top), 59px) + 20px)}
+  }
+  html.standalone body{height:100svh;min-height:100svh;padding-top:calc(max(env(safe-area-inset-top), 59px) + 24px)}
+  html.standalone body::before{content:"";height:calc(max(env(safe-area-inset-top), 59px) + 20px)}
+
+  @media (max-height:720px){
+    body{padding-top:calc(env(safe-area-inset-top) + 12px)}
+    .srow{padding:11px 0 10px}
+    .t{font-size:36px}
+    .canvas{min-height:140px}
+  }
+  @media (hover:hover) and (pointer:fine){
+    .name:hover{opacity:.75}
+    .name.off:hover{opacity:.55}
+    .ranges button:hover,.ctabs button:hover{color:#a1a1a6}
+    .ranges button.on:hover,.ctabs button.on:hover{color:#f5f5f7}
+  }
+  @media (min-width:700px) and (max-width:899px){
+    body{max-width:480px;margin:0 auto;border-left:1px solid #16161a;border-right:1px solid #16161a}
+  }
+  @media (min-width:900px){
+    html{display:flex;align-items:center;justify-content:center}
+    body{
+      width:min(1280px, calc(100vw - 64px), calc((100dvh - 64px) * 2.1641));
+      max-height:calc(100dvh - 64px);
+      min-height:0;
+      aspect-ratio:844 / 390;
+      height:auto;margin:0;
+      display:grid;
+      grid-template-columns:minmax(320px, 360px) minmax(0, 1fr);
+      grid-template-rows:auto minmax(0, 1fr) auto;
+      grid-template-areas:"header header" "rows charts" "footer footer";
+      column-gap:36px;
+      padding:28px 32px 16px;
+    }
+    header{grid-area:header;margin-bottom:16px}
+    #rows{grid-area:rows;min-height:0;overflow-y:auto;padding-right:20px;border-right:1px solid #1d1d20}
+    .charts{grid-area:charts;margin-top:0;padding-top:0;min-height:0}
+    .srow{padding:18px 0 17px}
+    .t{font-size:46px}
+    footer{grid-area:footer;padding-top:14px}
+  }
+  @media (min-width:900px) and (max-height:720px){
+    body{padding:20px 32px 12px}
+    .srow{padding:11px 0 10px}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="kicker">Aura · demo</div>
+  <div class="ranges" role="group" aria-label="Periodo">
+    <button data-days="1" class="on" aria-pressed="true">24H</button>
+    <button data-days="7" aria-pressed="false">7G</button>
+    <button data-days="30" aria-pressed="false">30G</button>
+  </div>
+</header>
+
+<div id="rows"></div>
+
+<div class="charts">
+  <div class="ctabs" role="group" aria-label="Grandezza">
+    <button data-metric="temp" class="on" aria-pressed="true">TEMPERATURA</button>
+    <button data-metric="hum" aria-pressed="false">UMIDITÀ</button>
+    <button data-metric="both" aria-pressed="false">COMBINATO</button>
+    <button data-metric="metar" aria-pressed="false">METAR/TAF</button>
+  </div>
+  <div class="legend" id="legend" hidden></div>
+  <div class="canvas" id="chart-wrap">
+    <canvas id="chart"></canvas>
+    <div class="empty" id="empty" hidden>
+      <strong>Nessuna lettura</strong>
+      <span id="empty-text">Demo statica con dati di esempio.</span>
+    </div>
+  </div>
+  <div class="metar" id="metar" hidden>
+    <div class="mtitle">METAR</div>
+    <pre class="mtext" id="metar-raw" tabindex="0" role="button" title="Tocca per tradurre / mostrare il testo originale">—</pre>
+    <div class="mtitle">TAF</div>
+    <pre class="mtext" id="taf-raw" tabindex="0" role="button" title="Tocca per tradurre / mostrare il testo originale">—</pre>
+  </div>
+</div>
+
+<footer>
+  <div class="fvolts" id="volts"></div>
+  <div class="fplace" id="place"></div>
+  <div class="fupdated"><span id="updated">—</span></div>
+</footer>
+
+<script src="./chart.umd.min.js"></script>
+<script>
+const fmt1 = (n) => n.toFixed(1).replace(".", ",");
+const fmt2 = (n) => n.toFixed(2).replace(".", ",");
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+function ago(ts) {
+  const sec = Math.max(0, Math.floor(Date.now() / 1000 - ts));
+  if (sec < 60) return "adesso";
+  if (sec < 3600) return Math.floor(sec / 60) + " min fa";
+  if (sec < 86400) return Math.floor(sec / 3600) + " h fa";
+  return Math.floor(sec / 86400) + " g fa";
+}
+
+const state = { days: 1, metric: "temp", rowMetric: "temp", view: "chart", payload: null, chart: null, spanMs: null, latestTs: null, online: false, schedule: [], hidden: { temp: new Set(), hum: new Set() }, hideInit: false, metarDecoded: false, pick: null };
+
+// Nel combinato temperatura e umidità sono due varianti dello stesso colore:
+// la temperatura usa il colore del sensore, l'umidità una versione più chiara.
+function lighten(hex, amount = 0.55) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || ""));
+  if (!m) return hex;
+  const n = parseInt(m[1], 16);
+  const mix = (c) => Math.round(c + (255 - c) * amount);
+  return "#" + [mix(n >> 16), mix((n >> 8) & 255), mix(n & 255)]
+    .map((c) => c.toString(16).padStart(2, "0")).join("");
+}
+const rowsEl = document.getElementById("rows");
+const emptyEl = document.getElementById("empty");
+const emptyText = document.getElementById("empty-text");
+const updatedEl = document.getElementById("updated");
+const voltsEl = document.getElementById("volts");
+const placeEl = document.getElementById("place");
+
+const sensorId = (sensor) => sensor.mac || "ext:" + sensor.name;
+const hiddenSet = () => {
+  const key = state.metric === "hum" || (state.metric === "both" && state.rowMetric === "hum") ? "hum" : "temp";
+  return state.hidden[key] || (state.hidden[key] = new Set());
+};
+const isHidden = (sensor) => hiddenSet().has(sensorId(sensor));
+const visibleSensors = (payload) => (payload.sensors || []).filter((s) => !isHidden(s));
+// Nel combinato si guarda un sensore alla volta; se non è stato scelto
+// esplicitamente si parte dal primo interno (il meteo esterno resta un'opzione).
+function selectedSensor(payload) {
+  const list = payload.sensors || [];
+  const chosen = state.pick && list.find((s) => sensorId(s) === state.pick);
+  return chosen || list.find((s) => !s.external) || list[0] || null;
+}
+const chartSensors = (payload) => state.metric === "both"
+  ? [selectedSensor(payload)].filter(Boolean)
+  : visibleSensors(payload);
+const voltLevel = (v) => {
+  if (v == null || !isFinite(v)) return "";
+  if (v <= 2.4) return "crit";
+  if (v <= 2.55) return "low";
+  return "";
+};
+const isWarmSeason = () => {
+  const month = new Date().getMonth();
+  return month >= 4 && month <= 8; // maggio-settembre
+};
+// Fascia di comfort: sotto 40% è secco, sopra 60% è umido.
+const HUM_BAND = [40, 60];
+
+function deltaOf(sensor, metric) {
+  const p = sensor.points || [];
+  if (p.length < 2) return null;
+  const a = p[p.length - 2], b = p[p.length - 1];
+  const d = metric === "temp" ? b[1] - a[1] : b[2] - a[2];
+  const min = metric === "temp" ? 0.05 : 1;
+  return Math.abs(d) < min ? 0 : d;
+}
+
+// La variazione usa la stessa tinta del sensore nel grafico, sia che salga,
+// scenda o resti ferma. Il meteo esterno (San Lazzaro) resta sempre neutro.
+function deltaTint(sensor) {
+  if (sensor.external || !sensor.color) return "";
+  return ` style="color:${esc(sensor.color)}"`;
+}
+
+function deltaClass(d, sensor) {
+  if (sensor.external) return "";
+  if (state.rowMetric === "hum") {
+    const last = sensor.latest;
+    const cur = last && last.hum != null ? last.hum : null;
+    // Dentro la fascia 40-60% qualsiasi movimento va bene; fuori è positivo
+    // solo ciò che riporta verso la fascia.
+    if (cur != null && cur >= HUM_BAND[0] && cur <= HUM_BAND[1]) return "up";
+    const towardComfort = cur == null
+      ? d < 0
+      : cur > HUM_BAND[1] ? d < 0 : d > 0;
+    return towardComfort ? "up" : "down";
+  }
+  return (isWarmSeason() ? d < 0 : d > 0) ? "up" : "down";
+}
+
+function fmtMetric(v) {
+  return state.rowMetric === "temp" ? fmt1(v) + "°" : Math.round(v) + "%";
+}
+
+function minmaxOf(sensor) {
+  const idx = state.rowMetric === "temp" ? 1 : 2;
+  let lo = null, hi = null;
+  (sensor.points || []).forEach((p) => {
+    const v = p[idx];
+    if (v == null || !isFinite(v)) return;
+    if (lo === null || v < lo) lo = v;
+    if (hi === null || v > hi) hi = v;
+  });
+  return lo === null ? null : [lo, hi];
+}
+
+function renderRows(payload) {
+  const isTemp = state.rowMetric === "temp";
+  const isBoth = state.metric === "both";
+  const picked = selectedSensor(payload);
+  const pickedId = picked ? sensorId(picked) : null;
+  rowsEl.innerHTML = payload.sensors.map((sensor) => {
+    const last = sensor.latest;
+    const tempVal = last && last.temp != null ? fmt1(last.temp) : null;
+    const humVal = last && last.hum != null ? Math.round(last.hum) : null;
+    const comma = '<span class="comma">,</span>';
+    const bigTemp = tempVal != null ? tempVal.replace(",", comma) : null;
+    const big = isTemp
+      ? (bigTemp != null ? `${bigTemp}<small>°</small>` : '<span class="na">n/d</span>')
+      : (humVal != null ? `${humVal}<small>%</small>` : '<span class="na">n/d</span>');
+    const other = isTemp
+      ? (humVal != null ? humVal + "%" : "n/d")
+      : (tempVal != null ? tempVal + "°" : "n/d");
+
+    const mm = minmaxOf(sensor);
+    const minmax = mm
+      ? `<div class="minmax"><span><b>min</b> <em>${fmtMetric(mm[0])}</em></span><span><b>max</b> <em>${fmtMetric(mm[1])}</em></span></div>`
+      : "";
+
+    const d = deltaOf(sensor, state.rowMetric);
+    let delta = '<span class="delta">—</span>';
+    if (d === 0) {
+      delta = `<span class="delta${sensor.external ? "" : " same"}"${deltaTint(sensor)}>=</span>`;
+    } else if (d != null) {
+      const cls = deltaClass(d, sensor);
+      const arrow = d > 0 ? "▲" : "▼";
+      const value = isTemp ? fmt1(Math.abs(d)) + "°" : Math.round(Math.abs(d)) + "%";
+      delta = `<span class="delta ${cls}"${deltaTint(sensor)}>${arrow} ${value}</span>`;
+    }
+
+    // Nel combinato il tap sul nome sceglie il sensore del grafico, invece di
+    // nasconderlo: lì la visibilità è già decisa dai set per grandezza.
+    const isPicked = isBoth && sensorId(sensor) === pickedId;
+    const off = (isBoth ? !isPicked : isHidden(sensor)) ? " off" : "";
+    const pressed = isBoth ? isPicked : !isHidden(sensor);
+    const title = isBoth ? "Mostra nel grafico combinato" : "Mostra/nascondi nel grafico";
+    return `
+      <div class="srow">
+        <div class="left">
+          <button class="name${off}" data-id="${esc(sensorId(sensor))}" aria-pressed="${pressed}" title="${title}"><span class="dot" style="background:${esc(sensor.color)}"></span>${esc(sensor.name)}</button>
+          ${minmax}
+        </div>
+        <div class="right">
+          <div class="t">${big}</div>
+          <div class="meta"><span>${other}</span>${delta}</div>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function renderLegend(payload) {
+  const isBoth = state.metric === "both";
+  const el = document.getElementById("legend");
+  el.hidden = !isBoth;
+  if (!isBoth) return;
+  const sensor = selectedSensor(payload);
+  if (!sensor) {
+    el.innerHTML = "";
+    return;
+  }
+  const tempColor = sensor.color || "#e76f51";
+  el.innerHTML =
+    `<span class="litem"><i style="background:${esc(tempColor)}"></i>Temperatura</span>` +
+    `<span class="litem"><i style="background:${esc(lighten(tempColor))}"></i>Umidità</span>`;
+}
+
+function singleMetricDatasets(payload) {
+  const metric = state.metric === "hum" ? "hum" : "temp";
+  return visibleSensors(payload).map((sensor) => {
+    const p = sensor.points || [];
+    const sparse = p.length <= 2;
+    return {
+      label: sensor.name,
+      data: p.map((row) => ({ x: row[0] * 1000, y: metric === "temp" ? row[1] : row[2] })),
+      borderColor: sensor.color,
+      backgroundColor: sensor.color,
+      fill: false,
+      borderWidth: sensor.external ? 1.3 : 1.6,
+      borderDash: sensor.external ? [5, 4] : [],
+      pointRadius: sparse ? 3.5 : 0,
+      pointBackgroundColor: sensor.color,
+      pointBorderColor: sensor.color,
+      pointBorderWidth: 0,
+      pointHoverBackgroundColor: sensor.color,
+      pointHoverBorderColor: sensor.color,
+      pointHoverBorderWidth: 0,
+      pointHoverRadius: 4,
+      pointHitRadius: 18,
+      tension: 0.35,
+      spanGaps: true,
+    };
+  });
+}
+
+function combinedDatasets(payload) {
+  const sensor = selectedSensor(payload);
+  if (!sensor) return [];
+  const p = sensor.points || [];
+  const sparse = p.length <= 2;
+  const dashed = sensor.external ? [5, 4] : [];
+  const tempColor = sensor.color || "#e76f51";
+  const humColor = lighten(tempColor);
+  const series = (label, idx, color, axis) => ({
+    label,
+    data: p.map((row) => ({ x: row[0] * 1000, y: row[idx] })),
+    yAxisID: axis,
+    borderColor: color,
+    backgroundColor: color,
+    fill: false,
+    borderWidth: sensor.external ? 1.3 : 1.6,
+    borderDash: dashed,
+    pointRadius: sparse ? 3.5 : 0,
+    pointBackgroundColor: color,
+    pointBorderColor: color,
+    pointBorderWidth: 0,
+    pointHoverBackgroundColor: color,
+    pointHoverBorderColor: color,
+    pointHoverBorderWidth: 0,
+    pointHoverRadius: 4,
+    pointHitRadius: 18,
+    tension: 0.35,
+    spanGaps: true,
+  });
+  return [
+    series("Temperatura", 1, tempColor, "y"),
+    series("Umidità", 2, humColor, "y1"),
+  ];
+}
+
+function datasets(payload) {
+  return state.metric === "both"
+    ? combinedDatasets(payload)
+    : singleMetricDatasets(payload);
+}
+
+function tickLabel(value) {
+  const d = new Date(value);
+  if (state.spanMs == null || state.spanMs < 36 * 3600 * 1000) {
+    return d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+  }
+  return d.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" });
+}
+
+function scheduleLabel() {
+  const slots = (state.schedule || []).map((m) => ":" + String(m).padStart(2, "0"));
+  if (!slots.length) return "";
+  if (slots.length === 1) return "alle " + slots[0];
+  return "alle " + slots.slice(0, -1).join(", ") + " e " + slots[slots.length - 1];
+}
+
+function timeBounds(payload) {
+  let lo = Infinity, hi = -Infinity;
+  chartSensors(payload).forEach((s) => (s.points || []).forEach((p) => {
+    if (p[0] < lo) lo = p[0];
+    if (p[0] > hi) hi = p[0];
+  }));
+  if (!isFinite(lo)) {
+    state.spanMs = null;
+    return null;
+  }
+  const loMs = lo * 1000, hiMs = hi * 1000;
+  state.spanMs = hiMs - loMs;
+  if (hiMs - loMs < 60000) {
+    return { min: loMs - 1800000, max: hiMs + 1800000 };
+  }
+  return { min: undefined, max: undefined };
+}
+
+function yDomain(metric, sensors) {
+  const idx = metric === "temp" ? 1 : 2;
+  const values = [];
+  (sensors || []).forEach((s) => (s.points || []).forEach((p) => {
+    const v = p[idx];
+    if (v != null && isFinite(v)) values.push(v);
+  }));
+  if (!values.length) return metric === "temp" ? [15, 30] : [30, 100];
+  let hi = Math.max(...values);
+  let lo = Math.min(...values);
+  if (metric === "hum") {
+    const high = HUM_BAND[1];
+    if (lo > high && lo - high <= 20) lo = high;
+    if (hi < high && high - hi <= 20) hi = high;
+  }
+  const span = Math.max(hi - lo, metric === "temp" ? 1 : 4);
+  const pad = Math.max(span * 0.14, metric === "temp" ? 0.5 : 1.5);
+  return [lo - pad, hi + pad];
+}
+
+function renderChart(payload) {
+  const isBoth = state.metric === "both";
+  const sets = datasets(payload);
+  const total = sets.reduce((n, s) => n + s.data.length, 0);
+  const hasData = (payload.sensors || []).some((s) => (s.points || []).length > 0);
+  const bounds = timeBounds(payload);
+  const list = chartSensors(payload);
+  const y = yDomain(isBoth ? "temp" : state.metric, list);
+  const y1 = yDomain("hum", list);
+
+  state.chart.data.datasets = sets;
+  state.chart.options.scales.x.min = bounds ? bounds.min : undefined;
+  state.chart.options.scales.x.max = bounds ? bounds.max : undefined;
+  state.chart.options.scales.y.min = y[0];
+  state.chart.options.scales.y.max = y[1];
+  state.chart.options.scales.y1.display = isBoth;
+  state.chart.options.scales.y1.min = y1[0];
+  state.chart.options.scales.y1.max = y1[1];
+  state.chart.update("none");
+
+  emptyEl.hidden = total > 0;
+  document.getElementById("chart").style.visibility = total ? "visible" : "hidden";
+  if (!total) {
+    if (isBoth && hasData) {
+      emptyText.textContent = "Nessun campione per questo sensore nel periodo.";
+    } else if (hasData) {
+      emptyText.textContent = "Nessun sensore visibile. Tocca un nome per mostrarlo nel grafico.";
+    } else {
+      const label = scheduleLabel();
+      emptyText.textContent = state.days === 1
+        ? (label ? `Le letture arrivano ${label} di ogni ora.` : "Le letture arrivano ogni 30 minuti.")
+        : `Nessun campione negli ultimi ${state.days} giorni.`;
+    }
+  }
+}
+
+const RE_WIND = /^(VRB|\d{3})(\d{2,3})(?:G(\d{2,3}))?(KT|MPS|KMH)$/;
+const RE_WIND_VAR = /^(\d{3})V(\d{3})$/;
+const RE_CLOUD = /^(FEW|SCT|BKN|OVC|VV)(\d{3}|\/{3})(CB|TCU)?$/;
+const RE_TEMP = /^(M?\d{2})\/(M?\d{2})?$/;
+const RE_PRESS = /^([QA])(\d{4})$/;
+const RE_VIS = /^(CAVOK|\d{4}|M?P?\d+SM|\d+\/\d+SM|\/{4})$/;
+const RE_TIME = /^(\d{2})(\d{2})(\d{2})Z$/;
+const RE_PERIOD = /^(\d{2})(\d{2})\/(\d{2})(\d{2})$/;
+const RE_RVR = /^R\d{2}[LCR]?\/[MP]?\d{4}(?:V[MP]?\d{4})?(?:FT)?$/;
+const RE_WX = /^[+-]?(?:VC)?(?:MI|PR|BC|DR|BL|SH|TS|FZ|RA|DZ|SN|SG|IC|PL|GR|GS|UP|BR|FG|FU|VA|DU|SA|HZ|PY|PO|SQ|FC|SS|DS){1,4}$/;
+
+const WX_TEXT = {
+  "-RA": "light rain", RA: "rain", "+RA": "heavy rain",
+  "-SHRA": "light rain showers", SHRA: "rain showers", "+SHRA": "heavy rain showers",
+  "-TSRA": "thunderstorm with light rain", TSRA: "thunderstorm with rain", "+TSRA": "thunderstorm with heavy rain",
+  TS: "thunderstorm", "-TS": "light thunderstorm", "+TS": "heavy thunderstorm",
+  BR: "mist", FG: "fog", "-FG": "light fog", "+FG": "dense fog",
+  FZFG: "freezing fog", MIFG: "shallow fog", BCFG: "patches of fog", PRFG: "partial fog",
+  HZ: "haze", FU: "smoke", DU: "dust", SA: "sand",
+  SN: "snow", "-SN": "light snow", "+SN": "heavy snow",
+  SHSN: "snow showers", "-SHSN": "light snow showers", "+SHSN": "heavy snow showers",
+  GR: "hail", GS: "small hail",
+  DZ: "drizzle", "-DZ": "light drizzle", "+DZ": "heavy drizzle",
+  VCSH: "showers in the vicinity", VCTS: "thunderstorm in the vicinity", VCFG: "fog in the vicinity",
+  NSW: "no significant weather",
+};
+const CLOUD_TEXT = { FEW: "few", SCT: "scattered", BKN: "broken", OVC: "overcast", VV: "vertical visibility" };
+
+function dayDate(day, hour, minute) {
+  const now = new Date();
+  let d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), day, hour, minute));
+  if (d.getTime() - now.getTime() > 36 * 3600 * 1000) {
+    d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, day, hour, minute));
+  }
+  return d;
+}
+
+function periodDate(day, hour, ref) {
+  let d = new Date(Date.UTC(ref.getUTCFullYear(), ref.getUTCMonth(), day, hour, 0));
+  if (day < ref.getUTCDate() - 15) {
+    d = new Date(Date.UTC(ref.getUTCFullYear(), ref.getUTCMonth() + 1, day, hour, 0));
+  }
+  return d;
+}
+
+function weekdayTime(d) {
+  const day = d.toLocaleDateString("en-GB", { weekday: "long" });
+  const time = d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  return `${day} ${time}`;
+}
+
+function fmtPeriod(token, ref) {
+  const m = RE_PERIOD.exec(token || "");
+  if (!m) return "";
+  const start = periodDate(Number(m[1]), Number(m[2]), ref || new Date());
+  const end = periodDate(Number(m[3]), Number(m[4]), start);
+  const sameDay = start.getFullYear() === end.getFullYear()
+    && start.getMonth() === end.getMonth()
+    && start.getDate() === end.getDate();
+  const endText = sameDay
+    ? end.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })
+    : weekdayTime(end);
+  return `from ${weekdayTime(start)} till ${endText}`;
+}
+
+function fmtFm(type) {
+  const m = /^FM(\d{2})(\d{2})(\d{2})$/.exec(type || "");
+  if (!m) return "From";
+  return "From " + weekdayTime(dayDate(Number(m[1]), Number(m[2]), Number(m[3])));
+}
+
+function cap(s) {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+}
+
+function decodeWind(tok) {
+  const m = RE_WIND.exec(tok);
+  if (!m) return tok;
+  const speed = Number(m[2]);
+  const unit = m[4] === "KT" ? "kt" : m[4] === "MPS" ? "m/s" : "km/h";
+  if ((m[1] === "000" || m[1] === "VRB") && speed === 0) return "Wind calm";
+  const dir = m[1] === "VRB" ? "variable" : `${m[1]}°`;
+  const gust = m[3] ? `, gusting ${Number(m[3])}${unit}` : "";
+  return `Wind ${dir} ${speed}${unit}${gust}`;
+}
+
+function decodeVis(tok) {
+  if (tok === "CAVOK") return "10km or more";
+  if (tok === "////") return "not available";
+  if (/^\d{4}$/.test(tok)) {
+    const m = Number(tok);
+    return m === 9999 ? "10km or more" : `${m}m`;
+  }
+  if (/^M?P?\d+SM$/.test(tok)) {
+    const prefix = tok[0] === "P" ? "more than " : tok[0] === "M" ? "less than " : "";
+    return `${prefix}${tok.replace(/[MP]|SM/g, "")}mi`;
+  }
+  return tok;
+}
+
+function decodeCloud(tok) {
+  if (/^(NSC|NCD|SKC|CLR)$/.test(tok)) return "no significant clouds";
+  const m = RE_CLOUD.exec(tok);
+  if (!m) return tok;
+  const cover = CLOUD_TEXT[m[1]];
+  if (m[2] === "///") return cover;
+  const feet = Number(m[2]) * 100;
+  const type = m[3] === "CB" ? " (cumulonimbus)" : m[3] === "TCU" ? " (towering cumulus)" : "";
+  return `${cover} ${feet}ft${type}`;
+}
+
+function tempText(v) {
+  if (!v) return "";
+  const neg = v[0] === "M";
+  const n = Number(v.replace("M", ""));
+  return `${neg && n !== 0 ? "-" : ""}${n}°C`;
+}
+
+function decodePressure(tok) {
+  const m = RE_PRESS.exec(tok);
+  if (!m) return tok;
+  if (m[1] === "Q") return `${Number(m[2])}hPa`;
+  return `${Math.round((Number(m[2]) / 100) * 33.8639)}hPa`;
+}
+
+function decodeWeather(tok) {
+  if (WX_TEXT[tok]) return WX_TEXT[tok];
+  let s = tok;
+  let intensity = "";
+  if (s[0] === "+" || s[0] === "-") {
+    intensity = s[0] === "+" ? "heavy " : "light ";
+    s = s.slice(1);
+  }
+  let vicinity = "";
+  if (s.startsWith("VC")) {
+    vicinity = " in the vicinity";
+    s = s.slice(2);
+  }
+  if (s.startsWith("FZ") && s.length > 2) {
+    const rest = s.slice(2);
+    return intensity + "freezing " + (WX_TEXT[rest] || decodeWeather(rest)) + vicinity;
+  }
+  const names = {
+    RA: "rain", SN: "snow", DZ: "drizzle", BR: "mist", FG: "fog",
+    TS: "thunderstorm", SH: "showers", GR: "hail", GS: "small hail",
+    HZ: "haze", FU: "smoke",
+  };
+  const parts = [];
+  while (s.length >= 2) {
+    const code = s.slice(0, 2);
+    if (!names[code]) break;
+    parts.push(names[code]);
+    s = s.slice(2);
+  }
+  return intensity + (parts.join(" and ") || tok) + vicinity;
+}
+
+function parseConditions(tokens) {
+  const c = {
+    wind: null, windVar: null, vis: null, cavok: false,
+    weather: [], clouds: [], temp: null, pressure: null, rvr: [],
+  };
+  tokens.forEach((t) => {
+    if (RE_WIND.test(t)) { c.wind = decodeWind(t); return; }
+    const v = RE_WIND_VAR.exec(t);
+    if (v) { c.windVar = [v[1], v[2]]; return; }
+    if (t === "CAVOK") { c.vis = decodeVis(t); c.cavok = true; return; }
+    if (RE_CLOUD.test(t) || /^(NSC|NCD|SKC|CLR)$/.test(t)) { c.clouds.push(decodeCloud(t)); return; }
+    if (RE_TEMP.test(t)) {
+      const m = RE_TEMP.exec(t);
+      c.temp = { t: m[1], d: m[2] || "" };
+      return;
+    }
+    if (RE_PRESS.test(t)) { c.pressure = decodePressure(t); return; }
+    if (RE_RVR.test(t)) { c.rvr.push(t); return; }
+    if (RE_VIS.test(t)) { c.vis = decodeVis(t); return; }
+    if (t === "NSW" || WX_TEXT[t] || RE_WX.test(t)) { c.weather.push(decodeWeather(t)); return; }
+  });
+  return c;
+}
+
+function conditionsSentence(c) {
+  const parts = [];
+  let wind = c.wind;
+  if (wind && c.windVar) wind += `, varying from ${c.windVar[0]}° to ${c.windVar[1]}°`;
+  else if (!wind && c.windVar) wind = `Wind varying from ${c.windVar[0]}° to ${c.windVar[1]}°`;
+  if (wind) parts.push(wind + ".");
+  if (c.vis) parts.push(`Visibility ${c.vis}.`);
+  if (c.cavok) parts.push("No significant clouds.");
+  if (c.weather.length) parts.push(cap(c.weather.join(", ")) + ".");
+  if (c.clouds.length) parts.push(`Clouds ${c.clouds.join(", ")}.`);
+  if (c.temp) {
+    let text = `Temperature ${tempText(c.temp.t)}`;
+    if (c.temp.d) text += `, dew point ${tempText(c.temp.d)}`;
+    parts.push(text + ".");
+  }
+  if (c.pressure) parts.push(`QNH ${c.pressure}.`);
+  if (c.rvr.length) parts.push(`RVR ${c.rvr.join(", ")}.`);
+  return parts.join(" ");
+}
+
+function decodeMetar(raw) {
+  const tokens = String(raw || "").trim().split(/\s+/).filter(Boolean);
+  let i = 0;
+  if (/^(METAR|SPECI)$/.test(tokens[i] || "")) i++;
+  while (/^(AUTO|COR|NIL|RTD)$/.test(tokens[i] || "")) i++;
+  if (/^[A-Z]{4}$/.test(tokens[i] || "")) i++;
+  while (/^(AUTO|COR|NIL|RTD)$/.test(tokens[i] || "")) i++;
+  if (RE_TIME.test(tokens[i] || "")) i++;
+  while (/^(AUTO|COR|NIL|RTD)$/.test(tokens[i] || "")) i++;
+  const rmk = tokens.indexOf("RMK");
+  const body = tokens.slice(i, rmk === -1 ? tokens.length : rmk).filter((t) => t !== "NOSIG");
+  const text = conditionsSentence(parseConditions(body));
+  return text || raw;
+}
+
+function groupLabel(sec, ref) {
+  const period = sec.period ? fmtPeriod(sec.period, ref) : "";
+  let label = "";
+  if (sec.type === "BECMG") label = "Becoming" + (period ? " " + period : "");
+  else if (sec.type === "TEMPO") label = "Temporarily" + (period ? " " + period : "");
+  else if (sec.type.startsWith("FM")) label = fmtFm(sec.type);
+  else if (period) label = cap(period);
+  if (sec.prob) {
+    const prob = `${Number(sec.prob.slice(4))}% probability`;
+    label = label ? `${prob}, ${label.charAt(0).toLowerCase()}${label.slice(1)}` : prob;
+  }
+  return label;
+}
+
+function decodeTaf(raw) {
+  const tokens = String(raw || "").trim().split(/\s+/).filter(Boolean);
+  let i = 0;
+  if (tokens[i] === "TAF") i++;
+  if (/^(AMD|COR)$/.test(tokens[i] || "")) i++;
+  if (/^[A-Z]{4}$/.test(tokens[i] || "")) i++;
+
+  let ref = new Date();
+  const timeMatch = RE_TIME.exec(tokens[i] || "");
+  if (timeMatch) {
+    ref = dayDate(Number(timeMatch[1]), Number(timeMatch[2]), Number(timeMatch[3]));
+    i++;
+  }
+  if (RE_PERIOD.test(tokens[i] || "")) i++;
+
+  const sections = [{ type: "Base", prob: "", period: "", tokens: [] }];
+  let current = sections[0];
+  let pendingProb = "";
+  for (; i < tokens.length; i++) {
+    const t = tokens[i];
+    if (/^PROB\d{2}$/.test(t)) {
+      pendingProb = t;
+      if (!/^(TEMPO|BECMG|FM)/.test(tokens[i + 1] || "")) {
+        current = { type: "PROB", prob: pendingProb, period: "", tokens: [] };
+        sections.push(current);
+        pendingProb = "";
+      }
+      continue;
+    }
+    if (/^(TEMPO|BECMG)$/.test(t)) {
+      current = { type: t, prob: pendingProb, period: "", tokens: [] };
+      sections.push(current);
+      pendingProb = "";
+      continue;
+    }
+    if (/^FM\d{6}$/.test(t) || t === "FM") {
+      let fm = t;
+      if (t === "FM" && /^\d{6}$/.test(tokens[i + 1] || "")) fm += tokens[++i];
+      current = { type: fm, prob: pendingProb, period: "", tokens: [] };
+      sections.push(current);
+      pendingProb = "";
+      continue;
+    }
+    if (RE_PERIOD.test(t) && current.type !== "Base" && !current.period) {
+      current.period = t;
+      continue;
+    }
+    current.tokens.push(t);
+  }
+
+  const lines = [];
+  sections.forEach((sec) => {
+    const body = conditionsSentence(parseConditions(sec.tokens));
+    if (sec.type === "Base") {
+      if (body) lines.push({ indent: false, text: body });
+      return;
+    }
+    const label = groupLabel(sec, ref);
+    if (body) lines.push({ indent: true, text: label ? `${label}: ${body}` : body });
+  });
+  return lines;
+}
+
+function tafRawLines(raw) {
+  return String(raw || "").trim().split(/\r?\n/)
+    .filter((line) => line.trim())
+    .map((line) => ({
+      indent: /^\s/.test(line) || /^(BECMG|TEMPO|PROB\d{2}|FM\d{6})\b/.test(line.trim()),
+      text: line.trim(),
+    }));
+}
+
+function renderLines(el, lines) {
+  el.textContent = "";
+  lines.forEach((line) => {
+    const span = document.createElement("span");
+    span.className = line.indent ? "tline ind" : "tline";
+    span.textContent = line.text;
+    el.appendChild(span);
+  });
+}
+
+function renderMetar(payload) {
+  const m = payload.metar;
+  const raw = document.getElementById("metar-raw");
+  const taf = document.getElementById("taf-raw");
+  if (!m) {
+    raw.textContent = "METAR non disponibile.";
+    taf.textContent = "TAF non disponibile.";
+    return;
+  }
+  const decoded = state.metarDecoded;
+  raw.classList.toggle("decoded", decoded);
+  taf.classList.toggle("decoded", decoded);
+  raw.setAttribute("aria-pressed", String(decoded));
+  taf.setAttribute("aria-pressed", String(decoded));
+  raw.textContent = m.metar ? (decoded ? decodeMetar(m.metar) : m.metar) : "METAR non disponibile.";
+  if (!m.taf) {
+    taf.textContent = "TAF non disponibile.";
+    return;
+  }
+  const lines = decoded ? decodeTaf(m.taf) : tafRawLines(m.taf);
+  if (lines.length) renderLines(taf, lines);
+  else taf.textContent = m.taf;
+}
+
+function syncView() {
+  const isMetar = state.view === "metar";
+  document.getElementById("chart-wrap").hidden = isMetar;
+  document.getElementById("metar").hidden = !isMetar;
+}
+
+let tooltipTimer = null;
+let tooltipTs = null;
+function hideTooltip() {
+  clearTimeout(tooltipTimer);
+  if (!state.chart) return;
+  state.chart.tooltip.setActiveElements([], { x: 0, y: 0 });
+  state.chart.update("none");
+}
+
+// Un punto per dataset: quello più vicino in orizzontale al cursore.
+// Il modo "index" di Chart.js accoppia i punti per posizione nell'array:
+// se un sensore ha più o meno letture degli altri i punti risultano sfalsati.
+function nearestPointPerDataset(chart, event, options, useFinalPosition) {
+  const px = event.x;
+  const items = [];
+  chart.getSortedVisibleDatasetMetas().forEach((meta) => {
+    const data = meta.data || [];
+    let best = null;
+    let bestDist = Infinity;
+    for (let i = 0; i < data.length; i++) {
+      const el = data[i];
+      if (!el || el.skip) continue;
+      const x = el.getProps(["x"], useFinalPosition).x;
+      if (!isFinite(x)) continue;
+      const dist = Math.abs(x - px);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = { element: el, datasetIndex: meta.index, index: i };
+      }
+    }
+    if (best) items.push(best);
+  });
+  return items;
+}
+Chart.Interaction.modes.nearestX = nearestPointPerDataset;
+
+function valueRange(sensor, idx) {
+  let lo = null, hi = null;
+  (sensor.points || []).forEach((p) => {
+    const v = p[idx];
+    if (v == null || !isFinite(v)) return;
+    if (lo === null || v < lo) lo = v;
+    if (hi === null || v > hi) hi = v;
+  });
+  return lo === null ? null : [lo, hi];
+}
+
+function initVisibility(payload) {
+  if (state.hideInit) return;
+  const ext = (payload.sensors || []).find((s) => s.external);
+  if (!ext) return;
+  state.hideInit = true;
+  const indoor = payload.sensors.filter((s) => !s.external);
+  if (!indoor.length) return;
+  // Il meteo esterno resta fuori dal grafico solo se il suo intervallo non
+  // tocca quello interno: 4 °C per la temperatura, 8 punti per l'umidità.
+  const hideIfFar = (idx, margin, hidden) => {
+    let lo = Infinity, hi = -Infinity;
+    indoor.forEach((s) => {
+      const r = valueRange(s, idx);
+      if (!r) return;
+      lo = Math.min(lo, r[0]);
+      hi = Math.max(hi, r[1]);
+    });
+    const extRange = valueRange(ext, idx);
+    if (!extRange || !isFinite(lo)) return;
+    if (extRange[1] < lo - margin || extRange[0] > hi + margin) hidden.add(sensorId(ext));
+  };
+  hideIfFar(1, 4, state.hidden.temp);
+  hideIfFar(2, 8, state.hidden.hum);
+}
+
+function renderFooter(payload) {
+  const volts = (payload.sensors || []).filter((s) => !s.external && s.latest && s.latest.volt != null);
+  voltsEl.innerHTML = volts.map((s) => (
+    `<span class="fvolt" title="${esc(s.name)}"><i class="fdot" style="background:${esc(s.color)}"></i><span class="${voltLevel(s.latest.volt)}">${fmt2(s.latest.volt)} V</span></span>`
+  )).join("");
+  const ext = (payload.sensors || []).find((s) => s.external);
+  placeEl.textContent = ext && ext.place ? ext.place : "";
+}
+
+function render(payload) {
+  state.payload = payload;
+  state.online = true;
+  state.schedule = payload.schedule_minutes || [];
+
+  let latest = null;
+  payload.sensors.forEach((s) => {
+    if (s.latest && (latest === null || s.latest.ts > latest)) latest = s.latest.ts;
+  });
+  state.latestTs = latest;
+
+  initVisibility(payload);
+  renderRows(payload);
+  renderLegend(payload);
+  renderChart(payload);
+  renderMetar(payload);
+  renderFooter(payload);
+  syncView();
+
+  updatedEl.textContent = latest ? ago(latest) : "nessun dato";
+  updatedEl.title = latest ? new Date(latest * 1000).toLocaleString("it-IT") : "";
+}
+
+const comfortLine = {
+  id: "comfortLine",
+  afterDatasetsDraw(chart) {
+    if (state.metric !== "hum" && state.metric !== "both") return;
+    const { ctx, chartArea, scales } = chart;
+    // Nel combinato l'umidità vive sull'asse destro.
+    const scale = state.metric === "both" ? scales.y1 : scales.y;
+    if (!scale) return;
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,255,255,.20)";
+    ctx.setLineDash([4, 5]);
+    ctx.lineWidth = 1;
+    ctx.fillStyle = "rgba(255,255,255,.38)";
+    ctx.font = '10px -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif';
+    ctx.textAlign = "right";
+    ctx.textBaseline = "bottom";
+    // La linea alta (60%) resta il riferimento; quella bassa (40%) compare
+    // solo quando i dati le arrivano vicino, così d'inverno non schiaccia il grafico.
+    HUM_BAND.forEach((value) => {
+      const y = scale.getPixelForValue(value);
+      if (!(y > chartArea.top + 3 && y < chartArea.bottom - 3)) return;
+      ctx.beginPath();
+      ctx.moveTo(chartArea.left, y + 0.5);
+      ctx.lineTo(chartArea.right, y + 0.5);
+      ctx.stroke();
+      ctx.fillText(`${value}%`, chartArea.right - 2, y - 3);
+    });
+    ctx.restore();
+  },
+};
+
+function makeChart() {
+  return new Chart(document.getElementById("chart"), {
+    type: "line",
+    plugins: [comfortLine],
+    data: { datasets: [] },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      parsing: false,
+      animation: false,
+      interaction: { mode: "nearestX", intersect: false },
+      layout: { padding: { top: 8, right: 4, bottom: 0, left: 0 } },
+      scales: {
+        x: {
+          type: "linear",
+          bounds: "data",
+          grid: { display: false },
+          border: { display: false },
+          ticks: {
+            color: "#5e5e63", count: 3, maxRotation: 0,
+            font: { size: 10 }, callback: tickLabel,
+          },
+        },
+        y: {
+          min: 15,
+          max: 30,
+          grid: { color: "rgba(255,255,255,.045)" },
+          border: { display: false },
+          ticks: { display: false, maxTicksLimit: 4 },
+        },
+        y1: {
+          display: false,
+          position: "right",
+          min: 30,
+          max: 100,
+          grid: { display: false },
+          border: { display: false },
+          ticks: { display: false, maxTicksLimit: 4 },
+        },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: "rgba(16,16,18,.95)",
+          borderColor: "rgba(255,255,255,.14)",
+          borderWidth: 1,
+          padding: 10,
+          titleFont: { size: 11 },
+          bodyFont: { size: 11.5 },
+          // Quadratino pieno: con il box classico Chart.js disegna uno sfondo
+          // sotto il riempimento e resta un anello visibile. Con usePointStyle
+          // il simbolo viene disegnato una volta sola, nel colore del dataset.
+          usePointStyle: true,
+          boxWidth: 9,
+          boxHeight: 9,
+          multiKeyBackground: "transparent",
+          callbacks: {
+            labelPointStyle: () => ({ pointStyle: "rect", rotation: 0 }),
+            labelColor: (item) => ({
+              borderColor: item.dataset.borderColor,
+              backgroundColor: item.dataset.borderColor,
+              borderWidth: 1,
+              borderRadius: 0,
+            }),
+            title: (items) => {
+              tooltipTs = items[0].parsed.x;
+              return new Date(tooltipTs).toLocaleString("it-IT", {
+                day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
+              });
+            },
+            label: (item) => {
+              const isHum = item.dataset.yAxisID === "y1" || state.metric === "hum";
+              const unit = isHum ? "%" : "°C";
+              const v = isHum ? Math.round(item.parsed.y) : fmt1(item.parsed.y);
+              let when = "";
+              if (tooltipTs != null && Math.abs(item.parsed.x - tooltipTs) > 60000) {
+                when = ` (${new Date(item.parsed.x).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })})`;
+              }
+              return ` ${item.dataset.label}: ${v} ${unit}${when}`;
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+async function refresh() {
+  try {
+    const res = await fetch(`./data-${state.days}.json`, { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    render(await res.json());
+  } catch (err) {
+    console.error(err);
+    state.online = false;
+    updatedEl.textContent = "dati demo non disponibili";
+    updatedEl.title = "";
+    if (!state.payload) {
+      emptyEl.hidden = false;
+      emptyText.textContent = "Impossibile caricare i dati della demo.";
+      document.getElementById("chart").style.visibility = "hidden";
+    }
+  }
+}
+
+document.querySelectorAll(".ranges button").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    hideTooltip();
+    document.querySelectorAll(".ranges button").forEach((b) => {
+      const on = b === btn;
+      b.classList.toggle("on", on);
+      b.setAttribute("aria-pressed", String(on));
+    });
+    state.days = Number(btn.dataset.days);
+    refresh();
+  });
+});
+
+document.querySelectorAll(".ctabs button").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".ctabs button").forEach((b) => {
+      const on = b === btn;
+      b.classList.toggle("on", on);
+      b.setAttribute("aria-pressed", String(on));
+    });
+    const metric = btn.dataset.metric;
+    if (metric === "metar") {
+      state.view = "metar";
+      if (state.payload) renderMetar(state.payload);
+    } else {
+      state.view = "chart";
+      // Nel combinato il numero grande è sempre la temperatura (asse sinistro);
+      // le righe tornano alla grandezza singola quando si cambia scheda.
+      state.rowMetric = metric === "hum" ? "hum" : "temp";
+      state.metric = metric;
+      if (state.payload) {
+        renderRows(state.payload);
+        renderLegend(state.payload);
+        renderChart(state.payload);
+      }
+    }
+    hideTooltip();
+    syncView();
+  });
+});
+
+rowsEl.addEventListener("click", (e) => {
+  const btn = e.target.closest("button.name");
+  if (!btn) return;
+  const id = btn.dataset.id;
+  if (state.metric === "both") {
+    state.pick = id;
+    if (state.payload) {
+      hideTooltip();
+      renderRows(state.payload);
+      renderLegend(state.payload);
+      renderChart(state.payload);
+    }
+    return;
+  }
+  const hidden = hiddenSet();
+  if (hidden.has(id)) hidden.delete(id);
+  else hidden.add(id);
+  if (state.payload) {
+    hideTooltip();
+    renderRows(state.payload);
+    renderChart(state.payload);
+  }
+});
+
+function toggleMetarDecoded() {
+  state.metarDecoded = !state.metarDecoded;
+  if (state.payload) renderMetar(state.payload);
+}
+
+["metar-raw", "taf-raw"].forEach((id) => {
+  const el = document.getElementById(id);
+  el.addEventListener("click", toggleMetarDecoded);
+  el.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      toggleMetarDecoded();
+    }
+  });
+});
+
+state.chart = makeChart();
+refresh();
+setInterval(refresh, 60000);
+setInterval(() => {
+  if (state.online && state.latestTs) updatedEl.textContent = ago(state.latestTs);
+}, 30000);
+
+const chartCanvas = document.getElementById("chart");
+chartCanvas.addEventListener("pointerdown", () => {
+  clearTimeout(tooltipTimer);
+  tooltipTimer = setTimeout(hideTooltip, 6000);
+});
+document.addEventListener("pointerdown", (e) => {
+  if (!e.target.closest("#chart-wrap")) hideTooltip();
+});
+</script>
+</body>
+</html>
