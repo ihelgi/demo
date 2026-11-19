@@ -258,6 +258,20 @@ function lighten(hex, amount = 0.55) {
   return "#" + [mix(n >> 16), mix((n >> 8) & 255), mix(n & 255)]
     .map((c) => c.toString(16).padStart(2, "0")).join("");
 }
+// Variante spenta: stessa resa del pallino quando il sensore non è selezionato,
+// cioè il colore al 45% sullo sfondo scuro.
+function dim(hex, alpha = 0.45) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || ""));
+  if (!m) return hex;
+  const n = parseInt(m[1], 16);
+  const bg = [10, 10, 12];
+  const mix = (c, b) => Math.round(c * alpha + b * (1 - alpha));
+  return "#" + [
+    mix(n >> 16, bg[0]),
+    mix((n >> 8) & 255, bg[1]),
+    mix(n & 255, bg[2]),
+  ].map((c) => c.toString(16).padStart(2, "0")).join("");
+}
 const rowsEl = document.getElementById("rows");
 const emptyEl = document.getElementById("empty");
 const emptyText = document.getElementById("empty-text");
@@ -304,11 +318,12 @@ function deltaOf(sensor, metric) {
   return Math.abs(d) < min ? 0 : d;
 }
 
-// La variazione usa la stessa tinta del sensore nel grafico, sia che salga,
-// scenda o resti ferma. Il meteo esterno (San Lazzaro) resta sempre neutro.
-function deltaTint(sensor) {
-  if (sensor.external || !sensor.color) return "";
-  return ` style="color:${esc(sensor.color)}"`;
+// La variazione usa la stessa tinta del pallino del sensore. Se il sensore non
+// è selezionato prende la variante spenta, come il pallino attenuato.
+function deltaTint(sensor, active) {
+  if (!sensor.color) return "";
+  const color = active ? sensor.color : dim(sensor.color);
+  return ` style="color:${esc(color)}"`;
 }
 
 function deltaClass(d, sensor) {
@@ -366,23 +381,24 @@ function renderRows(payload) {
       ? `<div class="minmax"><span><b>min</b> <em>${fmtMetric(mm[0])}</em></span><span><b>max</b> <em>${fmtMetric(mm[1])}</em></span></div>`
       : "";
 
+    // Nel combinato il tap sul nome sceglie il sensore del grafico, invece di
+    // nasconderlo: lì la visibilità è già decisa dai set per grandezza.
+    const isPicked = isBoth && sensorId(sensor) === pickedId;
+    const active = isBoth ? isPicked : !isHidden(sensor);
+    const off = active ? "" : " off";
+    const pressed = active;
+    const title = isBoth ? "Mostra nel grafico combinato" : "Mostra/nascondi nel grafico";
+
     const d = deltaOf(sensor, state.rowMetric);
     let delta = '<span class="delta">—</span>';
     if (d === 0) {
-      delta = `<span class="delta${sensor.external ? "" : " same"}"${deltaTint(sensor)}>=</span>`;
+      delta = `<span class="delta${sensor.external ? "" : " same"}"${deltaTint(sensor, active)}>=</span>`;
     } else if (d != null) {
       const cls = deltaClass(d, sensor);
       const arrow = d > 0 ? "▲" : "▼";
       const value = isTemp ? fmt1(Math.abs(d)) + "°" : Math.round(Math.abs(d)) + "%";
-      delta = `<span class="delta ${cls}"${deltaTint(sensor)}>${arrow} ${value}</span>`;
+      delta = `<span class="delta ${cls}"${deltaTint(sensor, active)}>${arrow} ${value}</span>`;
     }
-
-    // Nel combinato il tap sul nome sceglie il sensore del grafico, invece di
-    // nasconderlo: lì la visibilità è già decisa dai set per grandezza.
-    const isPicked = isBoth && sensorId(sensor) === pickedId;
-    const off = (isBoth ? !isPicked : isHidden(sensor)) ? " off" : "";
-    const pressed = isBoth ? isPicked : !isHidden(sensor);
-    const title = isBoth ? "Mostra nel grafico combinato" : "Mostra/nascondi nel grafico";
     return `
       <div class="srow">
         <div class="left">
